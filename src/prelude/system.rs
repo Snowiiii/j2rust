@@ -24,7 +24,11 @@ impl Class for System {
         }
     }
 
-    fn code_from_method(&self, name: &str, args: Vec<MethodArgumentType>) -> Option<Cow<'static, str>> {
+    fn code_from_method(
+        &self,
+        name: &str,
+        args: Vec<MethodArgumentType>,
+    ) -> Option<Cow<'static, str>> {
         todo!()
     }
 }

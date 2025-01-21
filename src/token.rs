@@ -7,6 +7,7 @@ pub enum TokenType {
     ARRAY,
     STATIC,
     QUOTE,
+    QUOTE_STRING,
     /// (
     OPEN_BRACE,
     /// )

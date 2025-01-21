@@ -1,6 +1,6 @@
 use crate::token::DataType;
 
-pub fn convert_data_type(data_type: DataType) -> &'static str {
+pub fn convert_data_type(data_type: &DataType) -> &'static str {
     match data_type {
         DataType::BYTE => "i8",
         DataType::SHORT => "i16",

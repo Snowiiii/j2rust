@@ -9,7 +9,7 @@ pub enum Node {
     Method(NodeMethod),
 }
 
-pub fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Node>, String> {
+pub fn parse_tokens(tokens: &Vec<Token>) -> Result<Vec<Node>, String> {
     let mut tokens = tokens.iter().peekable();
     let mut nodes = Vec::new();
 
@@ -30,17 +30,16 @@ pub fn parse_tokens(tokens: Vec<Token>) -> Result<Vec<Node>, String> {
                 nodes.push(Node::Class(class));
             }
             TokenType::VOID => {
-                let method = NodeMethod::parse(
+                let mut method = NodeMethod::parse(
                     &mut tokens,
                     current_visibility.clone(),
                     is_static,
                     nodes::MethodReturnType::VOID,
-                ).unwrap();
+                )
+                .unwrap();
                 // TODO
                 let code = method.parse_body(&mut tokens).unwrap();
-                for cod in code {
-                    println!("{}", cod)
-                }
+                method.code = code;
                 nodes.push(Node::Method(method));
             }
             TokenType::VISIBILITY(visibility) => current_visibility = visibility.to_owned(),

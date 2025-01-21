@@ -1,4 +1,4 @@
-use std::{env, path::Path};
+use std::{env, fs::File, io::Write, path::Path};
 
 use parser::{convert::method::convert_method, nodes::method::NodeMethod};
 
@@ -23,14 +23,21 @@ fn main() {
     // for token in tokens {
     //     println!("{}", token)
     // }
-    let nodes = parser::parse_tokens(tokens).unwrap();
+    let nodes = parser::parse_tokens(&tokens).unwrap();
+    let mut final_code = vec![];
     for node in nodes {
         match node {
-            parser::Node::Class(node_class) => {},
+            parser::Node::Class(node_class) => {}
             parser::Node::Method(node_method) => {
-                let header = convert_method(node_method);
-                println!("{}", header)
-            },
+                let code = node_method.get_full_code();
+                println!("{}", code);
+                final_code.push(code);
+            }
         }
+    }
+    let output_file = input_file.with_extension("rs");
+    let mut file = File::create(output_file).expect("Failed to create output file");
+    for line in final_code {
+        file.write(line.as_bytes()).unwrap();
     }
 }

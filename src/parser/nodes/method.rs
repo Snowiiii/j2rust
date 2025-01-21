@@ -1,6 +1,7 @@
 use std::{borrow::Cow, iter::Peekable, slice::Iter};
 
 use crate::{
+    parser::convert::method::convert_method,
     prelude::get_prelude_class,
     token::{Token, TokenType, Visibility},
 };
@@ -14,6 +15,7 @@ pub struct NodeMethod {
     pub r#static: bool,
     pub name: String,
     pub args: Vec<MethodArgument>,
+    pub code: Vec<Cow<'static, str>>,
 }
 
 pub struct MethodArgument {
@@ -37,6 +39,7 @@ impl NodeMethod {
             r#static: is_static,
             name,
             args,
+            code: vec![]
         });
     }
 
@@ -162,7 +165,7 @@ impl NodeMethod {
                                     if token.token_type == TokenType::UNKNOWN {
                                         // we are using field from method (e.g. System.out...)
                                         let name = token.value.clone().unwrap();
-                                        
+
                                         if let Some(token) = tokens.peek() {
                                             // this is the final function and not a field
                                             if token.token_type == TokenType::OPEN_BRACE {
@@ -171,21 +174,29 @@ impl NodeMethod {
                                                 let field = match class.get_field(&name) {
                                                     Some(field) => field,
                                                     None => {
-                                                        return Err("Failed to get Class field".to_string())
+                                                        return Err(
+                                                            "Failed to get Class field".to_string()
+                                                        )
                                                     }
                                                 };
                                                 class = field;
                                             }
                                         }
-                                        
+
                                         // lets contuine searching, we also may use multiple fields
                                     } else if token.token_type == TokenType::OPEN_BRACE {
                                         // we want to call a method (e.g. System.println())
                                         // lets parse the arguments
                                         let args = Self::parse_body_arguments(tokens)?;
-                                        let code = match class.code_from_method(&method_name, args) {
+                                        let code = match class.code_from_method(&method_name, args)
+                                        {
                                             Some(code) => code,
-                                            None => return Err(format!("Failed to get method {}", method_name)),
+                                            None => {
+                                                return Err(format!(
+                                                    "Failed to get method {}",
+                                                    method_name
+                                                ))
+                                            }
                                         };
                                         final_code.push(code);
                                     } else if token.token_type == TokenType::SEMICOLON {
@@ -217,7 +228,7 @@ impl NodeMethod {
                     let mut words = String::new();
                     for _ in 0..i16::MAX {
                         if let Some(token) = tokens.next() {
-                            if token.token_type == TokenType::UNKNOWN {
+                            if token.token_type == TokenType::QUOTE_STRING {
                                 words.push_str(&token.value.clone().unwrap());
                             } else if token.token_type == TokenType::QUOTE {
                                 args.push(MethodArgumentType::STRING(words));
@@ -233,5 +244,18 @@ impl NodeMethod {
             }
         }
         Ok(args)
+    }
+
+    pub fn get_full_code(&self) -> Cow<'static, str> {
+        let header = convert_method(self);
+        let code_lines = &self.code;
+        let mut final_code = header.to_string();
+        final_code.push_str("{\n");
+        for line in code_lines {
+            final_code.push_str(&format!("{}\n", line));
+        }
+        final_code.push_str("}");
+
+        final_code.into()
     }
 }

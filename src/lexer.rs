@@ -18,6 +18,7 @@ pub fn tokennize_line(string: String, line_number: usize, file: &String) -> Vec<
     let mut chars = string.chars().peekable();
 
     let mut line_col = 0;
+    let mut is_quote_message = false;
     while let Some(c) = chars.next() {
         line_col += 1;
         let char_info = CharLocationInfo {
@@ -25,7 +26,31 @@ pub fn tokennize_line(string: String, line_number: usize, file: &String) -> Vec<
             line_number: line_number + 1, // We want to start from line 1 and not 0
             line_col,
         };
-        if c.is_alphabetic() {
+        if c == '"' {
+            is_quote_message = !is_quote_message;
+
+            tokens.push(Token {
+                token_type: crate::token::TokenType::QUOTE,
+                value: None,
+                char_info,
+            });
+        } else if is_quote_message {
+            let mut ident = String::new();
+            ident.push(c);
+            while let Some(next) = chars.peek() {
+                if next.is_alphanumeric() {
+                    ident.push(chars.next().unwrap());
+                } else {
+                    break;
+                }
+            }
+
+            tokens.push(Token {
+                token_type: crate::token::TokenType::QUOTE_STRING,
+                value: Some(ident),
+                char_info,
+            });
+        } else if c.is_alphabetic() {
             let mut ident = String::new();
             ident.push(c);
             while let Some(next) = chars.peek() {
@@ -52,50 +77,44 @@ pub fn tokennize_line(string: String, line_number: usize, file: &String) -> Vec<
                 value: Some(num),
                 char_info,
             });
-        }else if c == '"' {
-            tokens.push( Token {
-                token_type: crate::token::TokenType::QUOTE,
-                value: None,
-                char_info,
-            });
-        }  else if c == '(' {
-            tokens.push( Token {
+        } else if c == '(' {
+            tokens.push(Token {
                 token_type: crate::token::TokenType::OPEN_BRACE,
                 value: None,
                 char_info,
             });
         } else if c == ')' {
-            tokens.push( Token {
+            tokens.push(Token {
                 token_type: crate::token::TokenType::CLOSE_BRACE,
                 value: None,
                 char_info,
             });
         } else if c == '{' {
-            tokens.push( Token {
+            tokens.push(Token {
                 token_type: crate::token::TokenType::OPEN_BRACKET,
                 value: None,
                 char_info,
             });
         } else if c == '}' {
-            tokens.push( Token {
+            tokens.push(Token {
                 token_type: crate::token::TokenType::CLOSE_BRACKET,
                 value: None,
                 char_info,
             });
         } else if c == ',' {
-            tokens.push( Token {
+            tokens.push(Token {
                 token_type: crate::token::TokenType::COMMA,
                 value: None,
                 char_info,
             });
-        } else if string == "[]" { // TODO fix array
-            tokens.push( Token {
+        } else if string == "[]" {
+            // TODO fix array
+            tokens.push(Token {
                 token_type: crate::token::TokenType::ARRAY,
                 value: None,
                 char_info,
             });
-        }
-        else if c == ';' {
+        } else if c == ';' {
             tokens.push(Token {
                 token_type: crate::token::TokenType::SEMICOLON,
                 value: None,

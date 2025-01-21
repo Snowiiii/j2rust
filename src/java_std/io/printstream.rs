@@ -1,6 +1,9 @@
 use std::borrow::Cow;
 
-use crate::{parser::nodes::{MethodArgumentType, MethodReturnType}, prelude::Class};
+use crate::{
+    parser::nodes::{MethodArgumentType, MethodReturnType},
+    prelude::Class,
+};
 
 pub struct PrintStream;
 
@@ -9,7 +12,11 @@ impl Class for PrintStream {
         todo!()
     }
 
-    fn code_from_method(&self, name: &str, args: Vec<MethodArgumentType>) -> Option<Cow<'static, str>> {
+    fn code_from_method(
+        &self,
+        name: &str,
+        args: Vec<MethodArgumentType>,
+    ) -> Option<Cow<'static, str>> {
         match name {
             "println" => {
                 let arg = match &args[0] {
@@ -17,8 +24,8 @@ impl Class for PrintStream {
                     MethodArgumentType::DATATYPE(data_type) => todo!(),
                     MethodArgumentType::CLASS(class) => todo!(),
                 };
-                Some(format!("println({})", arg).into())
-            },
+                Some(format!("println!(\"{}\")", arg).into())
+            }
             _ => None,
         }
     }
