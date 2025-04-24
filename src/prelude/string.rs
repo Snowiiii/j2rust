@@ -1,4 +1,4 @@
-use crate::parser::nodes::MethodArgumentType;
+use crate::parser::nodes::FunctionArgument;
 
 use super::Class;
 
@@ -12,7 +12,7 @@ impl Class for String {
     fn code_from_method(
         &self,
         name: &str,
-        args: Vec<MethodArgumentType>,
+        args: Vec<FunctionArgument>,
     ) -> Option<std::borrow::Cow<'static, str>> {
         todo!()
     }

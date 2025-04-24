@@ -36,7 +36,7 @@ pub enum Visibility {
     PRIVATE,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum DataType {
     BYTE,
     SHORT,
@@ -48,6 +48,7 @@ pub enum DataType {
     BOOLEAN,
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub token_type: TokenType,
     pub value: Option<String>,
@@ -68,7 +69,7 @@ impl std::fmt::Display for Token {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct CharLocationInfo {
     pub file_path: String,
     pub line_number: usize,

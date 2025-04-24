@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::{
-    parser::nodes::{MethodArgumentType, MethodReturnType},
+    parser::nodes::{FunctionArgument, MethodArgumentType, MethodReturnType},
     prelude::Class,
 };
 
@@ -15,17 +15,20 @@ impl Class for PrintStream {
     fn code_from_method(
         &self,
         name: &str,
-        args: Vec<MethodArgumentType>,
+        args: Vec<FunctionArgument>,
     ) -> Option<Cow<'static, str>> {
         match name {
-            "println" => {
-                let arg = match &args[0] {
-                    MethodArgumentType::STRING(s) => s,
-                    MethodArgumentType::DATATYPE(data_type) => todo!(),
-                    MethodArgumentType::CLASS(class) => todo!(),
-                };
-                Some(format!("println!(\"{}\")", arg).into())
-            }
+            "println" => match &args[0] {
+                FunctionArgument::STRING(s) => Some(format!("println!(\"{}\");", s).into()),
+                FunctionArgument::VARIABLE((r#type, var)) => {
+                    // because of regex
+                    let mut final_var = "{".to_string();
+                    final_var.push_str(var);
+                    final_var.push('}');
+                    Some(format!("println!({});", final_var).into())
+                }
+                _ => todo!(),
+            },
             _ => None,
         }
     }

@@ -2,7 +2,7 @@
 
 use std::borrow::Cow;
 
-use crate::{java_std::io::printstream::PrintStream, parser::nodes::MethodArgumentType};
+use crate::{java_std::io::printstream::PrintStream, parser::nodes::FunctionArgument};
 
 use super::Class;
 
@@ -27,7 +27,7 @@ impl Class for System {
     fn code_from_method(
         &self,
         name: &str,
-        args: Vec<MethodArgumentType>,
+        args: Vec<FunctionArgument>,
     ) -> Option<Cow<'static, str>> {
         todo!()
     }

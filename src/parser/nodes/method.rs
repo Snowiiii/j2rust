@@ -6,7 +6,10 @@ use crate::{
     token::{Token, TokenType, Visibility},
 };
 
-use super::{MethodArgumentType, MethodReturnType};
+use super::{
+    variable::{NodeVariable, VariableValue},
+    FunctionArgument, MethodArgumentType, MethodReturnType,
+};
 
 #[derive(Default)]
 pub struct NodeMethod {
@@ -32,14 +35,14 @@ impl NodeMethod {
         return_type: MethodReturnType,
     ) -> Result<Self, String> {
         let name = Self::parse_name(tokens)?;
-        let args = Self::parse_arugments(tokens)?;
+        let args = Self::parse_arguments(tokens)?;
         return Ok(Self {
             visibility,
             return_type,
             r#static: is_static,
             name,
             args,
-            code: vec![]
+            code: vec![],
         });
     }
 
@@ -52,7 +55,7 @@ impl NodeMethod {
         Err("Failed to get method name".to_string())
     }
 
-    pub fn parse_arugments(
+    pub fn parse_arguments(
         tokens: &mut Peekable<Iter<Token>>,
     ) -> Result<Vec<MethodArgument>, String> {
         if let Some(token) = tokens.next() {
@@ -152,12 +155,23 @@ impl NodeMethod {
             if token.token_type == TokenType::OPEN_BRACKET {
                 // here the magic happens
                 // this is for saftly the max method length
+                //
+                let mut current_vars = vec![];
                 for _ in 0..i32::MAX {
+                    let mut cloned_tokens = tokens.clone();
+                    if let Ok(var) = NodeVariable::parse(&mut cloned_tokens, &current_vars) {
+                        final_code.push(var.to_code());
+                        current_vars.push(var);
+                        *tokens = cloned_tokens;
+                        continue;
+                    }
                     if let Some(token) = tokens.next() {
                         if token.token_type == TokenType::UNKNOWN {
-                            // So this is something unknow, this either can be a Class or a Var, TODO: Check for vars
+                            // So this is something unknown, this either can be a Class or a Var, TODO: Check for vars
                             let class_name = token.value.as_ref().unwrap();
+
                             // TODO: Don't only support prelude classes but also which are included using import
+                            dbg!(class_name);
                             let mut class = get_prelude_class(class_name).expect("Invalid class");
                             let mut method_name = String::new();
                             for _ in 0..i32::MAX {
@@ -183,11 +197,12 @@ impl NodeMethod {
                                             }
                                         }
 
-                                        // lets contuine searching, we also may use multiple fields
+                                        // lets continue searching, we also may use multiple fields
                                     } else if token.token_type == TokenType::OPEN_BRACE {
                                         // we want to call a method (e.g. System.println())
                                         // lets parse the arguments
-                                        let args = Self::parse_body_arguments(tokens)?;
+                                        let args =
+                                            Self::parse_function_arguments(tokens, &current_vars)?;
                                         let code = match class.code_from_method(&method_name, args)
                                         {
                                             Some(code) => code,
@@ -215,14 +230,27 @@ impl NodeMethod {
         Ok(final_code)
     }
 
-    fn parse_body_arguments(
+    fn parse_function_arguments(
         tokens: &mut Peekable<Iter<Token>>,
-    ) -> Result<Vec<MethodArgumentType>, String> {
+        variables: &Vec<NodeVariable>,
+    ) -> Result<Vec<FunctionArgument>, String> {
         let mut args = vec![];
         for _ in 0..i32::MAX {
             if let Some(token) = tokens.next() {
                 if token.token_type == TokenType::UNKNOWN {
-                    // todo
+                    for var in variables {
+                        if &var.name == token.value.as_ref().unwrap() {
+                            if let Some(_val) = &var.value {
+                                args.push(FunctionArgument::VARIABLE((
+                                    var.r#type.clone(),
+                                    var.name.clone(),
+                                )));
+                            } else {
+                                return Err(format!("Variable {} is uninitialized", var.name));
+                            }
+                            break;
+                        }
+                    }
                 } else if token.token_type == TokenType::QUOTE {
                     // we have a direct string
                     let mut words = String::new();
@@ -231,7 +259,7 @@ impl NodeMethod {
                             if token.token_type == TokenType::QUOTE_STRING {
                                 words.push_str(&token.value.clone().unwrap());
                             } else if token.token_type == TokenType::QUOTE {
-                                args.push(MethodArgumentType::STRING(words));
+                                args.push(FunctionArgument::STRING(words));
                                 break;
                             }
                         }

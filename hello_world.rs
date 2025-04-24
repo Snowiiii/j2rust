@@ -1,3 +1,7 @@
 pub fn main() {
-println!("Hello, World!")
+    let number = 5;
+    let trstnumber = trstnumber;
+    println!({ number });
+    println!("Hello World");
+    println!({ trstnumber });
 }

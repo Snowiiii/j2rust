@@ -1,4 +1,4 @@
-use std::{env, fs::File, io::Write, path::Path};
+use std::{env, fs::File, io::Write, path::Path, process::Command};
 
 use parser::{convert::method::convert_method, nodes::method::NodeMethod};
 
@@ -36,8 +36,9 @@ fn main() {
         }
     }
     let output_file = input_file.with_extension("rs");
-    let mut file = File::create(output_file).expect("Failed to create output file");
+    let mut file = File::create(&output_file).expect("Failed to create output file");
     for line in final_code {
         file.write(line.as_bytes()).unwrap();
     }
+    let _ = Command::new("rustfmt").arg(output_file).output();
 }

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use system::System;
 
-use crate::parser::nodes::MethodArgumentType;
+use crate::parser::nodes::FunctionArgument;
 
 mod string;
 mod system;
@@ -13,7 +13,7 @@ pub trait Class {
     fn code_from_method(
         &self,
         name: &str,
-        args: Vec<MethodArgumentType>,
+        args: Vec<FunctionArgument>,
     ) -> Option<Cow<'static, str>>;
 }
 
