@@ -142,8 +142,31 @@ pub fn parse_token(string: &str, char_info: CharLocationInfo) -> Token {
             value: None,
             char_info,
         };
-    }
-    if string == "class" {
+    } else if string == "if" {
+        return Token {
+            token_type: crate::token::TokenType::IF,
+            value: None,
+            char_info,
+        };
+    } else if string == "else" {
+        return Token {
+            token_type: crate::token::TokenType::ELSE,
+            value: None,
+            char_info,
+        };
+    } else if string == "||" {
+        return Token {
+            token_type: crate::token::TokenType::OR,
+            value: None,
+            char_info,
+        };
+    } else if string == "&&" {
+        return Token {
+            token_type: crate::token::TokenType::AND,
+            value: None,
+            char_info,
+        };
+    } else if string == "class" {
         return Token {
             token_type: crate::token::TokenType::CLASS,
             value: None,

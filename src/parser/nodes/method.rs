@@ -1,15 +1,12 @@
 use std::{borrow::Cow, iter::Peekable, slice::Iter};
 
 use crate::{
-    parser::convert::method::convert_method,
+    parser::{convert::method::convert_method, ClassContext},
     prelude::get_prelude_class,
     token::{Token, TokenType, Visibility},
 };
 
-use super::{
-    variable::{NodeVariable, VariableValue},
-    FunctionArgument, MethodArgumentType, MethodReturnType,
-};
+use super::{variable::NodeVariable, FunctionArgument, MethodArgumentType, MethodReturnType};
 
 #[derive(Default)]
 pub struct NodeMethod {
@@ -30,19 +27,21 @@ pub struct MethodArgument {
 impl NodeMethod {
     pub fn parse(
         tokens: &mut Peekable<Iter<Token>>,
+        class_context: &ClassContext,
         visibility: Visibility,
         is_static: bool,
         return_type: MethodReturnType,
     ) -> Result<Self, String> {
         let name = Self::parse_name(tokens)?;
         let args = Self::parse_arguments(tokens)?;
+        let code = Self::parse_body(&args, class_context, tokens)?;
         return Ok(Self {
             visibility,
             return_type,
             r#static: is_static,
             name,
             args,
-            code: vec![],
+            code,
         });
     }
 
@@ -147,7 +146,8 @@ impl NodeMethod {
     }
 
     pub fn parse_body(
-        &self,
+        args: &Vec<MethodArgument>,
+        class_context: &ClassContext,
         tokens: &mut Peekable<Iter<Token>>,
     ) -> Result<Vec<Cow<'static, str>>, String> {
         let mut final_code = vec![];
@@ -157,16 +157,24 @@ impl NodeMethod {
                 // this is for saftly the max method length
                 //
                 let mut current_vars = vec![];
+                let mut current_if_level = 0;
+                let mut last_if = None;
                 for _ in 0..i32::MAX {
                     let mut cloned_tokens = tokens.clone();
-                    if let Ok(var) = NodeVariable::parse(&mut cloned_tokens, &current_vars) {
+                    if let Ok(var) =
+                        NodeVariable::parse(&mut cloned_tokens, class_context, &current_vars)
+                    {
                         final_code.push(var.to_code());
                         current_vars.push(var);
                         *tokens = cloned_tokens;
                         continue;
                     }
+
                     if let Some(token) = tokens.next() {
-                        if token.token_type == TokenType::UNKNOWN {
+                        if token.token_type == TokenType::IF {
+                            current_if_level += 1;
+                        } else if token.token_type == TokenType::ELSE {
+                        } else if token.token_type == TokenType::UNKNOWN {
                             // So this is something unknown, this either can be a Class or a Var, TODO: Check for vars
                             let class_name = token.value.as_ref().unwrap();
 
@@ -220,8 +228,12 @@ impl NodeMethod {
                                 }
                             }
                         } else if token.token_type == TokenType::CLOSE_BRACKET {
-                            // end of the method
-                            break;
+                            if current_if_level > 0 {
+                                current_if_level + -1;
+                            } else {
+                                // end of the method
+                                break;
+                            }
                         }
                     }
                 }

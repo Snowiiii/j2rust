@@ -3,6 +3,7 @@ use variable::{NodeVariable, VariableType};
 use crate::{prelude::Class, token::DataType};
 
 pub mod class;
+pub mod expr;
 pub mod method;
 pub mod variable;
 

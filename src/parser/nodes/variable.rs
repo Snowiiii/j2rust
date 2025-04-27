@@ -1,6 +1,9 @@
 use std::{borrow::Cow, iter::Peekable, slice::Iter};
 
-use crate::token::{DataType, Token, TokenType};
+use crate::{
+    parser::ClassContext,
+    token::{DataType, Token, TokenType},
+};
 
 #[derive(Clone)]
 pub struct NodeVariable {
@@ -87,7 +90,8 @@ impl NodeVariable {
     ///     }
     pub fn parse(
         tokens: &mut Peekable<Iter<Token>>,
-        current_context_vars: &[NodeVariable],
+        class_context: &ClassContext,
+        method_vars: &[NodeVariable],
     ) -> Result<Self, String> {
         let token = match tokens.next() {
             Some(token) => token,
@@ -100,17 +104,14 @@ impl NodeVariable {
             // Variable is a data type
             TokenType::DATATYPE(data_type) => Self::parse_variable_declaration(
                 tokens,
-                current_context_vars,
+                method_vars,
                 VariableType::DataType(*data_type),
                 token,
             ),
             // Variable is a class
-            TokenType::UNKNOWN => Self::parse_variable_declaration(
-                tokens,
-                current_context_vars,
-                VariableType::Class,
-                token,
-            ),
+            TokenType::UNKNOWN => {
+                Self::parse_variable_declaration(tokens, method_vars, VariableType::Class, token)
+            }
             _ => Err(format!("{}, Invalid expression: expected Variable", token)),
         }
     }
