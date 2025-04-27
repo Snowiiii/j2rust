@@ -25,7 +25,7 @@ impl Class for PrintStream {
                     let mut final_var = "{".to_string();
                     final_var.push_str(var);
                     final_var.push('}');
-                    Some(format!("println!({});", final_var).into())
+                    Some(format!("println!(\"{}\");", final_var).into())
                 }
                 _ => todo!(),
             },
