@@ -27,6 +27,8 @@ pub enum TokenType {
     DATATYPE(DataType),
     EQUAL,
     ADD,
+    MUL,
+    SUB,
     REMOVE,
     SEMICOLON,
     UNKNOWN,

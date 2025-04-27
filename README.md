@@ -2,7 +2,7 @@
 
 **Currently WIP**
 
-j2rust converts java to rust code
+j2rust converts Java to Rust code
 
 ### Running
 `cargo run -- <java_file.java>`

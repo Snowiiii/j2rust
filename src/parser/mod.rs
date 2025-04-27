@@ -1,5 +1,3 @@
-use std::str;
-
 use nodes::{class::NodeClass, method::NodeMethod, variable::NodeVariable};
 
 use crate::token::{Token, TokenType, Visibility};
@@ -23,7 +21,6 @@ pub struct ClassVariable {
     variable: NodeVariable,
 }
 
-
 /// Usally parses all tokens of one file
 pub fn parse_tokens(tokens: &Vec<Token>) -> Result<Vec<Node>, String> {
     let mut tokens = tokens.iter().peekable();
@@ -35,10 +32,16 @@ pub fn parse_tokens(tokens: &Vec<Token>) -> Result<Vec<Node>, String> {
     let mut current_visibility = Visibility::NONE;
 
     while let Some(token) = tokens.next() {
+        let tokens_clone = tokens.clone();
         if let Ok(variable) = NodeVariable::parse(&mut tokens, &class_context, &[]) {
-            class_context
-                .variables
-                .push(ClassVariable { visibility: current_visibility.clone(), is_static, variable });
+            dbg!("aa");
+            class_context.variables.push(ClassVariable {
+                visibility: current_visibility.clone(),
+                is_static,
+                variable,
+            });
+        } else {
+            tokens = tokens_clone;
         }
 
         let token_type = &token.token_type;

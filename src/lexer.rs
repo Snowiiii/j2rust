@@ -277,6 +277,16 @@ pub fn parse_expr(string: char, char_info: CharLocationInfo) -> Option<Token> {
             value: None,
             char_info,
         }),
+        '*' => Some(Token {
+            token_type: crate::token::TokenType::MUL,
+            value: None,
+            char_info,
+        }),
+        '/' => Some(Token {
+            token_type: crate::token::TokenType::SUB,
+            value: None,
+            char_info,
+        }),
         '+' => Some(Token {
             token_type: crate::token::TokenType::ADD,
             value: None,

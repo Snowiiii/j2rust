@@ -158,7 +158,6 @@ impl NodeMethod {
                 //
                 let mut current_vars = vec![];
                 let mut current_if_level = 0;
-                let mut last_if = None;
                 for _ in 0..i32::MAX {
                     let mut cloned_tokens = tokens.clone();
                     if let Ok(var) =

@@ -15,7 +15,7 @@ impl NodeClass {
                     Ok(Self { name })
                 }
                 _ => Err(format!(
-                    "{}, Invalid expression: expected string literal",
+                    "{}, Invalid Class expression: expected string literal",
                     token
                 )),
             }

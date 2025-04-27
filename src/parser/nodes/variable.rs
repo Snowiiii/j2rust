@@ -5,6 +5,8 @@ use crate::{
     token::{DataType, Token, TokenType},
 };
 
+use super::{expr::int::IntExpression, get_variable_in_method};
+
 #[derive(Clone)]
 pub struct NodeVariable {
     pub name: String,
@@ -104,20 +106,26 @@ impl NodeVariable {
             // Variable is a data type
             TokenType::DATATYPE(data_type) => Self::parse_variable_declaration(
                 tokens,
+                class_context,
                 method_vars,
                 VariableType::DataType(*data_type),
                 token,
             ),
             // Variable is a class
-            TokenType::UNKNOWN => {
-                Self::parse_variable_declaration(tokens, method_vars, VariableType::Class, token)
-            }
+            TokenType::UNKNOWN => Self::parse_variable_declaration(
+                tokens,
+                class_context,
+                method_vars,
+                VariableType::Class,
+                token,
+            ),
             _ => Err(format!("{}, Invalid expression: expected Variable", token)),
         }
     }
 
     fn parse_variable_declaration(
         tokens: &mut Peekable<Iter<Token>>,
+        class_context: &ClassContext,
         current_context_vars: &[NodeVariable],
         r#type: VariableType,
         name_token: &Token,
@@ -158,6 +166,7 @@ impl NodeVariable {
             TokenType::EQUAL => {
                 return Self::parse_variable_value(
                     tokens,
+                    class_context,
                     current_context_vars,
                     r#type,
                     name_token,
@@ -173,70 +182,52 @@ impl NodeVariable {
 
     fn parse_variable_value(
         tokens: &mut Peekable<Iter<Token>>,
-        current_context_vars: &[NodeVariable],
+        class_context: &ClassContext,
+        method_vars: &[NodeVariable],
         r#type: VariableType,
         name_token: &Token,
         name: String,
     ) -> Result<Self, String> {
-        let next_token = match tokens.next() {
-            Some(token) => token,
-            None => {
-                return Err(format!(
-                    "{}, Invalid expression: Variable got no value but equal",
-                    name_token
-                ));
-            }
-        };
-
         let mut value = None;
-        match next_token.token_type {
-            TokenType::INTLIT => {
-                value = Some(VariableValue::Direct(
-                    next_token.value.as_ref().unwrap().clone(),
-                ))
-            }
-            TokenType::TRUE => value = Some(VariableValue::Direct("true".to_string())),
-            TokenType::FALSE => value = Some(VariableValue::Direct("false".to_string())),
-            TokenType::UNKNOWN => {
-                // First lets check if we set the value to an existing vars value
-                // TODO: allow non context vars here
-                for var in current_context_vars {
-                    if &var.name == next_token.value.as_ref().unwrap() {
-                        value = Some(VariableValue::ByVar(name.clone()));
-                        break;
-                    }
-                }
-                // TODO: implement indirect
-            }
 
-            _ => {
-                return Err(format!(
-                    "{}, Invalid expression: Variable got no semicolon or value",
-                    next_token
-                ))
+        if let Ok(int) = IntExpression::parse(tokens, class_context, method_vars) {
+            if int.end_with_semi {
+                value = Some(VariableValue::Direct(int.final_code));
             }
-        };
+        }
+        // TODO: try parse other things, like booleans, floats...
 
-        let next_token = match tokens.next() {
-            Some(token) => token,
-            None => {
-                return Err(format!(
-                    "{}, Invalid expression: Variable got no simicolon",
-                    name_token
-                ));
-            }
-        };
+        // match next_token.token_type {
+        //     TokenType::TRUE => value = Some(VariableValue::Direct("true".to_string())),
+        //     TokenType::FALSE => value = Some(VariableValue::Direct("false".to_string())),
+        //     TokenType::UNKNOWN => {
+        //         // First lets check if we set the value to an existing vars value
+        //         // TODO: allow non context vars here
+        //         for var in current_context_vars {
+        //             if &var.name == next_token.value.as_ref().unwrap() {
+        //                 value = Some(VariableValue::ByVar(name.clone()));
+        //                 break;
+        //             }
+        //         }
+        //         // TODO: implement indirect
+        //     }
 
-        match next_token.token_type {
-            TokenType::SEMICOLON => Ok(Self {
+        //     _ => {
+        //         return Err(format!(
+        //             "{}, Invalid expression: Variable got no semicolon or value",
+        //             next_token
+        //         ))
+        //     }
+        // };
+
+        if value.is_some() {
+            Ok(Self {
                 name,
                 r#type,
                 value,
-            }),
-            _ => Err(format!(
-                "{}, Invalid expression: Variable got no semicolon",
-                next_token
-            )),
+            })
+        } else {
+            Err(format!("Invalid expression: Variable got no semicolon",))
         }
     }
 }
